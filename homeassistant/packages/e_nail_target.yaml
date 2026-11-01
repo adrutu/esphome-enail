@@ -1,0 +1,32 @@
+# esphome-enail v0.1.0 — target in °F for dashboards. Copy to /config/packages/e_nail_target.yaml.
+# The box, PID and cutoffs stay in °C; this only converts. 10 °F a tap (the dial does the
+# 2 °F fine steps). It can only change the target, it never starts a session, so it is safe
+# to put on a shared wall tablet.
+template:
+  - number:
+      - name: E-nail target
+        unique_id: e_nail_target_f
+        unit_of_measurement: "°F"
+        icon: mdi:thermometer
+        min: 212
+        max: 842
+        step: 10
+        availability: "{{ has_value('climate.e_nail') }}"
+        # the HA climate attribute is rounded to whole °C, so snap to the dial's 2 °F grid
+        state: "{{ ((state_attr('climate.e_nail', 'temperature') | float(0) * 1.8 + 32) / 2) | round(0) * 2 }}"
+        set_value:
+          - service: climate.set_temperature
+            target:
+              entity_id: climate.e_nail
+            data:
+              temperature: "{{ ((value - 32) / 1.8) | round(2) }}"
+  # the coil reading in °F for the dashboard graph (no device_class, so HA leaves it in °F).
+  # HA may create it as sensor.e_nail_temperature_degf: rename it to sensor.e_nail_temperature_f.
+  - sensor:
+      - name: E-nail temperature (°F)
+        unique_id: e_nail_temperature_f
+        unit_of_measurement: "°F"
+        icon: mdi:thermometer
+        state_class: measurement
+        availability: "{{ has_value('sensor.e_nail_temperature') }}"
+        state: "{{ (states('sensor.e_nail_temperature') | float(0) * 1.8 + 32) | round(0) }}"

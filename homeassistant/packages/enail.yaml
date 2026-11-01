@@ -1,0 +1,141 @@
+# esphome-enail v0.1.0 — sessions + alerts for the ESPHome node `enail`.
+# Copy to /config/packages/enail.yaml (see docs/home-assistant.md).
+#
+# The node does PID, timing and every safety stop on its own (see firmware/enail.yaml).
+# These scripts only set it up: target, length, then the Session switch.
+# Entities: climate.e_nail, switch.e_nail_session, number.e_nail_session_length,
+#           sensor.e_nail_temperature, sensor.e_nail_status, sensor.e_nail_time_left
+
+script:
+  enail_session:
+    alias: "E-nail - session"
+    description: "Heat to one temperature for N minutes, then the node switches itself off."
+    icon: mdi:fire
+    mode: restart
+    fields:
+      temperature:
+        name: Temperature
+        default: 260
+        selector:
+          number:
+            min: 100
+            max: 450
+            step: 5
+            unit_of_measurement: "°C"
+      minutes:
+        name: Minutes
+        default: 15
+        selector:
+          number:
+            min: 1
+            max: 60
+            step: 1
+            unit_of_measurement: min
+    sequence:
+      - action: climate.set_temperature
+        target:
+          entity_id: climate.e_nail
+        data:
+          temperature: "{{ temperature | default(260) }}"
+      - action: number.set_value
+        target:
+          entity_id: number.e_nail_session_length
+        data:
+          value: "{{ minutes | default(15) }}"
+      - action: switch.turn_on
+        target:
+          entity_id: switch.e_nail_session
+
+  enail_stepped_session:
+    alias: "E-nail - stepped session"
+    description: >-
+      Several temperatures in a row: each step waits until the nail is within 5 °C, then holds it for
+      its minutes. Stops early if the session is switched off. The node's own timer (max 60 min) still
+      applies.
+    icon: mdi:stairs-up
+    mode: restart
+    fields:
+      steps:
+        name: Steps
+        description: "List of {temp, minutes}"
+        example: "[{temp: 230, minutes: 5}, {temp: 260, minutes: 10}]"
+        default:
+          - temp: 230
+            minutes: 5
+          - temp: 260
+            minutes: 10
+        selector:
+          object:
+    sequence:
+      - variables:
+          plan: "{{ steps | default([{'temp': 230, 'minutes': 5}, {'temp': 260, 'minutes': 10}]) }}"
+          # holding time + 5 min of heat-up per step, capped by the node at 60
+          length: "{{ [plan | map(attribute='minutes') | sum + 5 * plan | count, 60] | min }}"
+      - action: climate.set_temperature
+        target:
+          entity_id: climate.e_nail
+        data:
+          temperature: "{{ plan[0].temp }}"
+      - action: number.set_value
+        target:
+          entity_id: number.e_nail_session_length
+        data:
+          value: "{{ length }}"
+      - action: switch.turn_on
+        target:
+          entity_id: switch.e_nail_session
+      - repeat:
+          for_each: "{{ plan }}"
+          sequence:
+            - condition: state
+              entity_id: switch.e_nail_session
+              state: "on"
+            - action: climate.set_temperature
+              target:
+                entity_id: climate.e_nail
+              data:
+                temperature: "{{ repeat.item.temp }}"
+            - wait_template: >-
+                {{ is_state('switch.e_nail_session', 'off')
+                   or states('sensor.e_nail_temperature') | float(0) >= repeat.item.temp - 5 }}
+              timeout: "00:10:00"
+            - condition: state
+              entity_id: switch.e_nail_session
+              state: "on"
+            - delay:
+                minutes: "{{ repeat.item.minutes }}"
+      - action: switch.turn_off
+        target:
+          entity_id: switch.e_nail_session
+
+automation:
+  - id: enail_status_push
+    alias: "E-nail - ready / done / fault"
+    description: "Phone push when the nail is ready, finished, or stopped itself on a fault."
+    mode: queued
+    triggers:
+      - trigger: state
+        entity_id: sensor.e_nail_status
+    conditions:
+      - condition: template
+        value_template: >-
+          {{ trigger.to_state.state == 'Ready' or trigger.to_state.state == 'Done'
+             or trigger.to_state.state.startswith('Fault') }}
+    actions:
+      # CHANGE ME: your phone's notify action (Developer tools → Actions → search 'notify.mobile_app')
+      - action: notify.mobile_app_your_phone
+        data:
+          title: >-
+            {%- set s = trigger.to_state.state -%}
+            {{ 'E-nail ready' if s == 'Ready' else 'E-nail finished' if s == 'Done' else 'E-nail stopped: ' ~ s[7:] }}
+          message: >-
+            {%- set s = trigger.to_state.state -%}
+            {%- if s == 'Ready' -%}
+              {{ states('sensor.e_nail_temperature') }} °C, {{ states('sensor.e_nail_time_left') | float(0) | round(0) | int }} min left.
+            {%- elif s == 'Done' -%}
+              Session over, heater off.
+            {%- else -%}
+              Heater cut by the controller at {{ states('sensor.e_nail_temperature') }} °C. Check the coil and probe before the next session.
+            {%- endif %}
+          data:
+            tag: enail

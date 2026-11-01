@@ -1,0 +1,220 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1030 470" width="1030" height="470">
+<title>ESP32 GND and 3.3V go to the breadboard's minus and plus rails. The MAX6675 sits in five breadboard columns: its GND and VCC columns jump to the rails, and ESP32 IO18, IO16 and IO19 go to its SCK, CS and SO columns. The screen's pin 1 goes to the plus rail, pin 7 to the minus rail and pin 3 to the SCK column; its pins 2, 4 and 5 go straight to ESP32 IO17, IO23 and IO4, and pin 6 stays empty.</title>
+<style>
+:root {
+  --bg: #f2f5f3; --panel: #ffffff; --ink: #15302a; --muted: #56706a; --faint: #9aaba5; --line: #cdd8d3;
+  --copper: #a8551f; --warn: #c0331d; --warn-wash: #fbe9e5;
+  --pcb: #dbe6f4; --pcb-edge: #2a5ca8; --bb: #f7f8f6; --bb-edge: #c3ccc8; --hole: #aab6b1; --gap: #e3e8e6;
+  --other: #9aa7a2;
+  --n-gnd: #3b4651; --n-pwr: #d1382c; --n-sck: #b97700; --n-cs: #2563c9;
+  --n-so: #1d8a50; --n-ocs: #7b45c9; --n-mosi: #0b8792; --n-dc: #c23a78;
+  --m-live: #c62828; --m-neu: #1f262b; --m-earth: #8a949b; --v5: #c97a00; --probe: #0b8792;
+  --zone-m: #fbeeea; --zone-l: #eaf1f9;
+  --font-display: "Arial Narrow", "Liberation Sans Narrow", sans-serif;
+  --font-body: system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "DejaVu Sans Mono", Menlo, monospace;
+}
+svg text { font-family: var(--font-body); fill: var(--ink); }
+svg .t-xs { font-size: 10px; fill: var(--muted); font-family: var(--font-mono); }
+svg .t-s { font-size: 11.5px; fill: var(--muted); }
+svg .t-hd { font: 600 12px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; fill: var(--copper); }
+svg .t-row { font: 500 11px var(--font-mono); fill: var(--faint); }
+svg .t-pin { font-family: var(--font-mono); font-size: 12.5px; }
+svg .t-pin.on { font-weight: 600; fill: var(--ink); }
+svg .t-pin.other { fill: var(--muted); }
+svg .t-pin.off { fill: var(--faint); }
+svg .pcb { fill: var(--pcb); stroke: var(--pcb-edge); stroke-width: 1.5; }
+svg .usb { fill: var(--panel); stroke: var(--ink); stroke-width: 1.5; }
+svg .pin-on { stroke: var(--panel); stroke-width: 2.5; }
+svg .pin-other { fill: var(--other); }
+svg .pin-off { fill: var(--pcb); stroke: var(--faint); stroke-width: 1.5; }
+svg .bb { fill: var(--bb); stroke: var(--bb-edge); stroke-width: 1.5; }
+svg .hole { fill: var(--hole); }
+svg .gap { fill: var(--gap); }
+svg .stripe { stroke-width: 2; fill: none; }
+svg .colmark { opacity: 0.2; }
+svg .mod { fill: var(--panel); stroke: var(--ink); stroke-width: 1.5; }
+svg .leg { stroke: var(--ink); stroke-width: 3; }
+svg .legtip { fill: var(--ink); }
+svg .t-modpin { font: 600 11px var(--font-mono); }
+svg .t-mod { font: 700 16px var(--font-display); }
+svg .probe { fill: none; stroke: var(--muted); stroke-width: 3; stroke-linecap: round; }
+svg .w { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+svg .hdr { fill: var(--panel); stroke: var(--ink); stroke-width: 1.5; }
+svg .hdrdiv { stroke: var(--line); stroke-width: 1; }
+svg .t-hn { font: 600 10px var(--font-mono); }
+svg .t-hl { font: 500 9px var(--font-mono); fill: var(--muted); }
+svg .t-lab { font: 700 15px var(--font-display); }
+svg .tag { fill: var(--panel); stroke-width: 2; }
+svg .t-tag { font: 600 14px var(--font-mono); }
+svg .t-where { font-size: 11px; fill: var(--muted); }
+svg .zm { fill: var(--zone-m); }
+svg .zl { fill: var(--zone-l); }
+svg .t-zone { font: 600 12px var(--font-mono); letter-spacing: 0.08em; }
+svg .zm-t { fill: var(--m-live); }
+svg .zl-t { fill: var(--n-cs); }
+svg .mw { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+svg .mw.opt { stroke-dasharray: 7 6; stroke-width: 3; }
+svg .c-live { stroke: var(--m-live); }
+svg .c-neu { stroke: var(--m-neu); }
+svg .c-earth { stroke: var(--m-earth); }
+svg .c-5v { stroke: var(--v5); }
+svg .c-gnd { stroke: var(--n-gnd); }
+svg .c-probe { stroke: var(--probe); }
+svg .d-live { fill: var(--m-live); }
+svg .d-neu { fill: var(--m-neu); }
+svg .d-earth { fill: var(--m-earth); }
+svg .d-5v { fill: var(--v5); }
+svg .d-gnd { fill: var(--n-gnd); }
+svg .d-probe { fill: var(--probe); }
+svg .wago { fill: var(--panel); stroke-width: 2.5; }
+svg .wago.live { stroke: var(--m-live); }
+svg .wago.neu { stroke: var(--m-neu); }
+svg .wago.v5 { stroke: var(--v5); }
+svg .t-ok { font: 500 11px var(--font-mono); fill: var(--muted); }
+svg .screw { fill: var(--panel); stroke: var(--m-earth); stroke-width: 2; }
+svg .w.n-gnd, svg .stripe.n-gnd, svg .tag.n-gnd { stroke: var(--n-gnd); }
+svg .w.n-pwr, svg .stripe.n-pwr, svg .tag.n-pwr { stroke: var(--n-pwr); }
+svg .w.n-sck, svg .tag.n-sck { stroke: var(--n-sck); }
+svg .w.n-cs, svg .tag.n-cs { stroke: var(--n-cs); }
+svg .w.n-so, svg .tag.n-so { stroke: var(--n-so); }
+svg .w.n-ocs, svg .tag.n-ocs { stroke: var(--n-ocs); }
+svg .w.n-mosi, svg .tag.n-mosi { stroke: var(--n-mosi); }
+svg .w.n-dc, svg .tag.n-dc { stroke: var(--n-dc); }
+svg .n-gnd:is(circle, .colmark) { fill: var(--n-gnd); }
+svg .n-pwr:is(circle, .colmark) { fill: var(--n-pwr); }
+svg .n-sck:is(circle, .colmark) { fill: var(--n-sck); }
+svg .n-cs:is(circle, .colmark) { fill: var(--n-cs); }
+svg .n-so:is(circle, .colmark) { fill: var(--n-so); }
+svg .n-ocs:is(circle) { fill: var(--n-ocs); }
+svg .n-mosi:is(circle) { fill: var(--n-mosi); }
+svg .n-dc:is(circle) { fill: var(--n-dc); }
+</style>
+<rect x="0.0" y="0.0" width="1030.0" height="470.0" fill="#ffffff"/>
+<defs>
+  <pattern id="holeRow" x="327" y="137" width="30" height="20" patternUnits="userSpaceOnUse"><rect class="hole" width="6" height="6" rx="1"/></pattern>
+  <pattern id="holeRail" x="327" y="53" width="30" height="32" patternUnits="userSpaceOnUse"><rect class="hole" width="6" height="6" rx="1"/></pattern>
+</defs>
+<rect class="bb" x="300" y="12" width="410" height="332" rx="10"/>
+<line class="stripe n-gnd" x1="318" y1="44" x2="694" y2="44"/>
+<line class="stripe n-pwr" x1="318" y1="100" x2="694" y2="100"/>
+<text class="t-s" x="694" y="36" text-anchor="end">− rail = GND</text>
+<text class="t-s" x="694" y="122" text-anchor="end">+ rail = 3.3V</text>
+<rect class="colmark n-gnd" x="409" y="128" width="22" height="104" rx="5"/>
+<rect class="colmark n-pwr" x="439" y="128" width="22" height="104" rx="5"/>
+<rect class="colmark n-sck" x="469" y="128" width="22" height="104" rx="5"/>
+<rect class="colmark n-cs" x="499" y="128" width="22" height="104" rx="5"/>
+<rect class="colmark n-so" x="529" y="128" width="22" height="104" rx="5"/>
+<rect x="324" y="50" width="372" height="44" fill="url(#holeRail)"/>
+<rect x="324" y="134" width="372" height="92" fill="url(#holeRow)"/>
+<rect class="gap" x="300" y="236" width="410" height="12"/>
+<rect class="mod" x="398" y="262" width="164" height="74" rx="6"/>
+<line class="leg" x1="420" y1="262" x2="420" y2="220"/>
+<circle class="legtip" cx="420" cy="220" r="3.5"/>
+<text class="t-modpin" x="420" y="280" text-anchor="middle">GND</text>
+<line class="leg" x1="450" y1="262" x2="450" y2="220"/>
+<circle class="legtip" cx="450" cy="220" r="3.5"/>
+<text class="t-modpin" x="450" y="280" text-anchor="middle">VCC</text>
+<line class="leg" x1="480" y1="262" x2="480" y2="220"/>
+<circle class="legtip" cx="480" cy="220" r="3.5"/>
+<text class="t-modpin" x="480" y="280" text-anchor="middle">SCK</text>
+<line class="leg" x1="510" y1="262" x2="510" y2="220"/>
+<circle class="legtip" cx="510" cy="220" r="3.5"/>
+<text class="t-modpin" x="510" y="280" text-anchor="middle">CS</text>
+<line class="leg" x1="540" y1="262" x2="540" y2="220"/>
+<circle class="legtip" cx="540" cy="220" r="3.5"/>
+<text class="t-modpin" x="540" y="280" text-anchor="middle">SO</text>
+<text class="t-mod" x="480" y="305" text-anchor="middle">MAX6675</text>
+<text class="t-xs" x="455" y="328" text-anchor="middle">+</text>
+<text class="t-xs" x="505" y="328" text-anchor="middle">−</text>
+<path class="probe" d="M455 336 V372"/><path class="probe" d="M505 336 V372"/>
+<text class="t-s" x="480" y="392" text-anchor="middle">probe screws in here</text>
+<path class="w n-gnd" d="M420 140 Q372 104 360 56"/>
+<circle class="end n-gnd" cx="420" cy="140" r="4.5"/>
+<circle class="end n-gnd" cx="360" cy="56" r="4.5"/>
+<path class="w n-pwr" d="M450 140 Q466 114 450 88"/>
+<circle class="end n-pwr" cx="450" cy="140" r="4.5"/>
+<circle class="end n-pwr" cx="450" cy="88" r="4.5"/>
+<path class="w n-gnd" d="M224 56 H330"/>
+<circle class="end n-gnd" cx="330" cy="56" r="4.5"/>
+<path class="w n-pwr" d="M224 112 H250 V88 H330"/>
+<circle class="end n-pwr" cx="330" cy="88" r="4.5"/>
+<path class="w n-sck" d="M224 168 H260 V150 H480 V160"/>
+<circle class="end n-sck" cx="480" cy="160" r="4.5"/>
+<path class="w n-cs" d="M224 224 H270 V170 H510 V180"/>
+<circle class="end n-cs" cx="510" cy="180" r="4.5"/>
+<path class="w n-so" d="M224 280 H280 V190 H540 V200"/>
+<circle class="end n-so" cx="540" cy="200" r="4.5"/>
+<path class="w n-pwr" d="M740 330 V88 H690"/>
+<circle class="end n-pwr" cx="690" cy="88" r="4.5"/>
+<path class="w n-gnd" d="M932 330 V56 H690"/>
+<circle class="end n-gnd" cx="690" cy="56" r="4.5"/>
+<path class="w n-sck" d="M804 330 V210 H746 A6 6 0 0 0 734 210 H480 V200"/>
+<circle class="end n-sck" cx="480" cy="200" r="4.5"/>
+<path class="w n-ocs" d="M772 364 V384 H712 V410"/>
+<path class="w n-mosi" d="M836 364 V410"/>
+<path class="w n-dc" d="M868 364 V392 H960 V410"/>
+<circle class="end n-pwr" cx="740" cy="330" r="4.5"/>
+<circle class="end n-sck" cx="804" cy="330" r="4.5"/>
+<circle class="end n-gnd" cx="932" cy="330" r="4.5"/>
+<circle class="end n-ocs" cx="772" cy="364" r="4.5"/>
+<circle class="end n-mosi" cx="836" cy="364" r="4.5"/>
+<circle class="end n-dc" cx="868" cy="364" r="4.5"/>
+<rect class="hdr" x="724" y="330" width="224" height="34" rx="4"/>
+<text class="t-hn" x="740" y="345" text-anchor="middle">1</text>
+<text class="t-hl" x="740" y="358" text-anchor="middle">3-6V</text>
+<line class="hdrdiv" x1="756" y1="333" x2="756" y2="361"/>
+<text class="t-hn" x="772" y="345" text-anchor="middle">2</text>
+<text class="t-hl" x="772" y="358" text-anchor="middle">CS</text>
+<line class="hdrdiv" x1="788" y1="333" x2="788" y2="361"/>
+<text class="t-hn" x="804" y="345" text-anchor="middle">3</text>
+<text class="t-hl" x="804" y="358" text-anchor="middle">SCK</text>
+<line class="hdrdiv" x1="820" y1="333" x2="820" y2="361"/>
+<text class="t-hn" x="836" y="345" text-anchor="middle">4</text>
+<text class="t-hl" x="836" y="358" text-anchor="middle">MOSI</text>
+<line class="hdrdiv" x1="852" y1="333" x2="852" y2="361"/>
+<text class="t-hn" x="868" y="345" text-anchor="middle">5</text>
+<text class="t-hl" x="868" y="358" text-anchor="middle">DC</text>
+<line class="hdrdiv" x1="884" y1="333" x2="884" y2="361"/>
+<text class="t-hn" x="900" y="345" text-anchor="middle">6</text>
+<text class="t-hl" x="900" y="358" text-anchor="middle">Ø</text>
+<line class="hdrdiv" x1="916" y1="333" x2="916" y2="361"/>
+<text class="t-hn" x="932" y="345" text-anchor="middle">7</text>
+<text class="t-hl" x="932" y="358" text-anchor="middle">GND</text>
+<text class="t-s" x="900" y="380" text-anchor="middle">empty</text>
+<text class="t-lab" x="716" y="345" text-anchor="end">Screen</text>
+<text class="t-s" x="716" y="360" text-anchor="end">pins 1–7</text>
+<rect class="tag n-gnd" x="24" y="34" width="200" height="44" rx="6"/>
+<circle class="tagdot n-gnd" cx="40" cy="56" r="6"/>
+<text class="t-tag" x="54" y="53">GND</text>
+<text class="t-where" x="54" y="69">any free GND pin</text>
+<rect class="tag n-pwr" x="24" y="90" width="200" height="44" rx="6"/>
+<circle class="tagdot n-pwr" cx="40" cy="112" r="6"/>
+<text class="t-tag" x="54" y="109">3.3V</text>
+<text class="t-where" x="54" y="125">right inner, row 8</text>
+<rect class="tag n-sck" x="24" y="146" width="200" height="44" rx="6"/>
+<circle class="tagdot n-sck" cx="40" cy="168" r="6"/>
+<text class="t-tag" x="54" y="165">IO18</text>
+<text class="t-where" x="54" y="181">right inner, row 4</text>
+<rect class="tag n-cs" x="24" y="202" width="200" height="44" rx="6"/>
+<circle class="tagdot n-cs" cx="40" cy="224" r="6"/>
+<text class="t-tag" x="54" y="221">IO16</text>
+<text class="t-where" x="54" y="237">left inner, row 6</text>
+<rect class="tag n-so" x="24" y="258" width="200" height="44" rx="6"/>
+<circle class="tagdot n-so" cx="40" cy="280" r="6"/>
+<text class="t-tag" x="54" y="277">IO19</text>
+<text class="t-where" x="54" y="293">right inner, row 5</text>
+<rect class="tag n-ocs" x="652" y="410" width="120" height="44" rx="6"/>
+<circle class="tagdot n-ocs" cx="668" cy="432" r="6"/>
+<text class="t-tag" x="682" y="429">IO17</text>
+<text class="t-where" x="682" y="445">left inner, row 5</text>
+<rect class="tag n-mosi" x="776" y="410" width="120" height="44" rx="6"/>
+<circle class="tagdot n-mosi" cx="792" cy="432" r="6"/>
+<text class="t-tag" x="806" y="429">IO23</text>
+<text class="t-where" x="806" y="445">right inner, row 6</text>
+<rect class="tag n-dc" x="900" y="410" width="120" height="44" rx="6"/>
+<circle class="tagdot n-dc" cx="916" cy="432" r="6"/>
+<text class="t-tag" x="930" y="429">IO4</text>
+<text class="t-where" x="930" y="445">left outer, row 6</text>
+<text class="t-hd" x="24" y="20">ESP32 pins</text>
+</svg>

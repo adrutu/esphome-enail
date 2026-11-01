@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Safety first
+    url: https://github.com/adrutu/esphome-enail/blob/main/SAFETY.md
+    about: Read this before opening a mains box.

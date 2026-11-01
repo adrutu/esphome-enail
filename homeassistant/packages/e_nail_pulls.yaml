@@ -1,0 +1,88 @@
+# esphome-enail v0.1.0 — pull counter. Copy to /config/packages/e_nail_pulls.yaml.
+# A pull draws air over the hot nail, so the coil
+# drops >= 4 C within 12 s while the PID is holding. Counted from 90 s after the coil first
+# comes within 3 C of the target (skips the heat-up overshoot; again after a target change),
+# at most one per 25 s. Checked on real sessions: a cold start to 480 F gave 0 false counts;
+# a 15-minute stretch counted 6 where about 5 were taken. A restart with the coil still hot
+# over-counts. A ramp session counts (its small target steps don't re-arm the 90 s wait).
+# Autotune runs and anything done with input_boolean.e_nail_tuning on are not counted.
+# Privacy: this is personal data. Keep it off shared dashboards, and consider not exposing
+# it to Assist or voice assistants (docs/home-assistant.md).
+input_boolean:
+  e_nail_tuning:
+    name: E-nail tuning
+    icon: mdi:tune
+
+template:
+  - trigger:
+      - platform: state
+        entity_id: sensor.e_nail_temperature
+        id: temp
+      - platform: state
+        entity_id: switch.e_nail_session
+        to: "on"
+        id: start
+      - platform: time
+        at: "00:00:00"
+        id: midnight
+    action:
+      - variables:
+          now_ts: "{{ now().timestamp() }}"
+          sess_on: "{{ is_state('switch.e_nail_session', 'on') }}"
+          temp: "{{ states('sensor.e_nail_temperature') | float(-1) }}"
+          tgt: "{{ state_attr('climate.e_nail', 'temperature') | float(0) }}"
+          old_tgt: "{{ state_attr('sensor.e_nail_pulls', 'target') | float(0) }}"
+          old_win: "{{ state_attr('sensor.e_nail_pulls', 'window') or [] }}"
+          old_near: "{{ state_attr('sensor.e_nail_pulls', 'near_since') | float(0) }}"
+          last_pull: "{{ state_attr('sensor.e_nail_pulls', 'last_pull') | float(0) }}"
+      - variables:
+          # a ramp session's small steps don't re-arm; its first jump to From (3 C or more) does
+          restart: >-
+            {{ trigger.id == 'start' or (tgt - old_tgt) | abs >= 3
+               or (tgt != old_tgt and not is_state('script.e_nail_ramp_session', 'on')) }}
+          # an autotune's on/off swings look exactly like pulls, so tuning sessions don't count
+          live: "{{ trigger.id == 'temp' and sess_on and temp > 0 and not is_state('sensor.e_nail_status', 'Autotune')
+                    and not is_state('input_boolean.e_nail_tuning', 'on') }}"
+      - variables:
+          # readings from the last 12 s; a reconnect or 'unavailable' starts it again
+          win: >-
+            {% set ns = namespace(w=[]) %}
+            {% if live %}
+              {% for p in old_win if now_ts - p[0] <= 12 %}{% set ns.w = ns.w + [p] %}{% endfor %}
+              {% set ns.w = ns.w + [[now_ts, temp]] %}
+            {% endif %}
+            {{ ns.w }}
+          # when the coil first came within 3 C of the target this session (or since a target change)
+          near: >-
+            {% if not sess_on %}0
+            {% elif old_near > 0 and not restart %}{{ old_near }}
+            {% elif live and (temp - tgt) | abs <= 3 %}{{ now_ts }}
+            {% else %}0{% endif %}
+      - variables:
+          settled: "{{ sess_on and near > 0 and now_ts - near >= 90 }}"
+          top: >-
+            {% set ns = namespace(m=temp) %}
+            {% for p in win %}{% if p[1] > ns.m %}{% set ns.m = p[1] %}{% endif %}{% endfor %}
+            {{ ns.m }}
+      - variables:
+          pull: "{{ live and settled and (top - temp) >= 4 and (now_ts - last_pull) >= 25 }}"
+    sensor:
+      - name: E-nail pulls
+        unique_id: e_nail_pulls_total
+        icon: mdi:weather-windy
+        unit_of_measurement: pulls
+        state_class: total_increasing
+        state: "{{ states('sensor.e_nail_pulls') | int(0) + (1 if pull else 0) }}"
+        attributes:
+          session: >-
+            {% set s = 0 if trigger.id == 'start' else state_attr('sensor.e_nail_pulls', 'session') | int(0) %}
+            {{ s + (1 if pull else 0) }}
+          today: >-
+            {% set same_day = state_attr('sensor.e_nail_pulls', 'day') == (now().date() | string) %}
+            {{ (state_attr('sensor.e_nail_pulls', 'today') | int(0) if same_day else 0) + (1 if pull else 0) }}
+          day: "{{ now().date() | string }}"
+          window: "{{ win }}"
+          near_since: "{{ near }}"
+          settled: "{{ settled }}"
+          last_pull: "{{ now_ts if pull else last_pull }}"
+          target: "{{ tgt }}"

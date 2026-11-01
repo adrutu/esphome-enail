@@ -1,0 +1,44 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  firmware:
+    name: ESPHome config + compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # pinned to the version the prototype runs
+      - run: pip install esphome==2026.10.1
+      # the example secrets are dummies that only let the config validate
+      - run: cp firmware/secrets.example.yaml firmware/secrets.yaml
+      - run: esphome config firmware/enail.yaml > /dev/null
+      - run: esphome compile firmware/enail.yaml
+
+  homeassistant:
+    name: Home Assistant YAML parses
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml
+      - name: Parse every package and dashboard file
+        run: |
+          python - <<'PY'
+          import glob, yaml
+          files = sorted(glob.glob("homeassistant/**/*.yaml", recursive=True))
+          for f in files:
+              yaml.safe_load(open(f, encoding="utf-8"))
+              print("ok", f)
+          assert files, "no YAML found"
+          PY

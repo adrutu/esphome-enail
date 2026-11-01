@@ -1,0 +1,194 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="40 0 420 482" width="420" height="482">
+<title>The ESP32 Mini seen from its printed side with USB at the bottom. Two blocks of pins, each with an outer and inner column of ten rows. Pins used today are coloured: GND left outer row 1, left inner row 7 and right outer row 1; IO17 left inner row 5; IO16 left inner row 6; IO4 left outer row 6; IO18 right inner row 4; IO19 right inner row 5; IO23 right inner row 6; 3.3V right inner row 8.</title>
+<style>
+:root {
+  --bg: #f2f5f3; --panel: #ffffff; --ink: #15302a; --muted: #56706a; --faint: #9aaba5; --line: #cdd8d3;
+  --copper: #a8551f; --warn: #c0331d; --warn-wash: #fbe9e5;
+  --pcb: #dbe6f4; --pcb-edge: #2a5ca8; --bb: #f7f8f6; --bb-edge: #c3ccc8; --hole: #aab6b1; --gap: #e3e8e6;
+  --other: #9aa7a2;
+  --n-gnd: #3b4651; --n-pwr: #d1382c; --n-sck: #b97700; --n-cs: #2563c9;
+  --n-so: #1d8a50; --n-ocs: #7b45c9; --n-mosi: #0b8792; --n-dc: #c23a78;
+  --m-live: #c62828; --m-neu: #1f262b; --m-earth: #8a949b; --v5: #c97a00; --probe: #0b8792;
+  --zone-m: #fbeeea; --zone-l: #eaf1f9;
+  --font-display: "Arial Narrow", "Liberation Sans Narrow", sans-serif;
+  --font-body: system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "DejaVu Sans Mono", Menlo, monospace;
+}
+svg text { font-family: var(--font-body); fill: var(--ink); }
+svg .t-xs { font-size: 10px; fill: var(--muted); font-family: var(--font-mono); }
+svg .t-s { font-size: 11.5px; fill: var(--muted); }
+svg .t-hd { font: 600 12px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; fill: var(--copper); }
+svg .t-row { font: 500 11px var(--font-mono); fill: var(--faint); }
+svg .t-pin { font-family: var(--font-mono); font-size: 12.5px; }
+svg .t-pin.on { font-weight: 600; fill: var(--ink); }
+svg .t-pin.other { fill: var(--muted); }
+svg .t-pin.off { fill: var(--faint); }
+svg .pcb { fill: var(--pcb); stroke: var(--pcb-edge); stroke-width: 1.5; }
+svg .usb { fill: var(--panel); stroke: var(--ink); stroke-width: 1.5; }
+svg .pin-on { stroke: var(--panel); stroke-width: 2.5; }
+svg .pin-other { fill: var(--other); }
+svg .pin-off { fill: var(--pcb); stroke: var(--faint); stroke-width: 1.5; }
+svg .bb { fill: var(--bb); stroke: var(--bb-edge); stroke-width: 1.5; }
+svg .hole { fill: var(--hole); }
+svg .gap { fill: var(--gap); }
+svg .stripe { stroke-width: 2; fill: none; }
+svg .colmark { opacity: 0.2; }
+svg .mod { fill: var(--panel); stroke: var(--ink); stroke-width: 1.5; }
+svg .leg { stroke: var(--ink); stroke-width: 3; }
+svg .legtip { fill: var(--ink); }
+svg .t-modpin { font: 600 11px var(--font-mono); }
+svg .t-mod { font: 700 16px var(--font-display); }
+svg .probe { fill: none; stroke: var(--muted); stroke-width: 3; stroke-linecap: round; }
+svg .w { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+svg .hdr { fill: var(--panel); stroke: var(--ink); stroke-width: 1.5; }
+svg .hdrdiv { stroke: var(--line); stroke-width: 1; }
+svg .t-hn { font: 600 10px var(--font-mono); }
+svg .t-hl { font: 500 9px var(--font-mono); fill: var(--muted); }
+svg .t-lab { font: 700 15px var(--font-display); }
+svg .tag { fill: var(--panel); stroke-width: 2; }
+svg .t-tag { font: 600 14px var(--font-mono); }
+svg .t-where { font-size: 11px; fill: var(--muted); }
+svg .zm { fill: var(--zone-m); }
+svg .zl { fill: var(--zone-l); }
+svg .t-zone { font: 600 12px var(--font-mono); letter-spacing: 0.08em; }
+svg .zm-t { fill: var(--m-live); }
+svg .zl-t { fill: var(--n-cs); }
+svg .mw { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+svg .mw.opt { stroke-dasharray: 7 6; stroke-width: 3; }
+svg .c-live { stroke: var(--m-live); }
+svg .c-neu { stroke: var(--m-neu); }
+svg .c-earth { stroke: var(--m-earth); }
+svg .c-5v { stroke: var(--v5); }
+svg .c-gnd { stroke: var(--n-gnd); }
+svg .c-probe { stroke: var(--probe); }
+svg .d-live { fill: var(--m-live); }
+svg .d-neu { fill: var(--m-neu); }
+svg .d-earth { fill: var(--m-earth); }
+svg .d-5v { fill: var(--v5); }
+svg .d-gnd { fill: var(--n-gnd); }
+svg .d-probe { fill: var(--probe); }
+svg .wago { fill: var(--panel); stroke-width: 2.5; }
+svg .wago.live { stroke: var(--m-live); }
+svg .wago.neu { stroke: var(--m-neu); }
+svg .wago.v5 { stroke: var(--v5); }
+svg .t-ok { font: 500 11px var(--font-mono); fill: var(--muted); }
+svg .screw { fill: var(--panel); stroke: var(--m-earth); stroke-width: 2; }
+svg .w.n-gnd, svg .stripe.n-gnd, svg .tag.n-gnd { stroke: var(--n-gnd); }
+svg .w.n-pwr, svg .stripe.n-pwr, svg .tag.n-pwr { stroke: var(--n-pwr); }
+svg .w.n-sck, svg .tag.n-sck { stroke: var(--n-sck); }
+svg .w.n-cs, svg .tag.n-cs { stroke: var(--n-cs); }
+svg .w.n-so, svg .tag.n-so { stroke: var(--n-so); }
+svg .w.n-ocs, svg .tag.n-ocs { stroke: var(--n-ocs); }
+svg .w.n-mosi, svg .tag.n-mosi { stroke: var(--n-mosi); }
+svg .w.n-dc, svg .tag.n-dc { stroke: var(--n-dc); }
+svg .n-gnd:is(circle, .colmark) { fill: var(--n-gnd); }
+svg .n-pwr:is(circle, .colmark) { fill: var(--n-pwr); }
+svg .n-sck:is(circle, .colmark) { fill: var(--n-sck); }
+svg .n-cs:is(circle, .colmark) { fill: var(--n-cs); }
+svg .n-so:is(circle, .colmark) { fill: var(--n-so); }
+svg .n-ocs:is(circle) { fill: var(--n-ocs); }
+svg .n-mosi:is(circle) { fill: var(--n-mosi); }
+svg .n-dc:is(circle) { fill: var(--n-dc); }
+</style>
+<rect x="40.0" y="0.0" width="420.0" height="482.0" fill="#ffffff"/>
+<rect class="pcb" x="170" y="40" width="202" height="400" rx="10"/>
+<rect class="usb" x="244" y="432" width="54" height="20" rx="4"/>
+<text class="t-xs" x="271" y="472" text-anchor="middle">USB-C</text>
+<text class="t-xs" x="271" y="424" text-anchor="middle">MINI D1 ESP32</text>
+<text class="t-hd" x="196" y="14" text-anchor="middle">left block</text>
+<text class="t-hd" x="346" y="14" text-anchor="middle">right block</text>
+<text class="t-xs" x="180" y="31" text-anchor="middle">outer</text>
+<text class="t-xs" x="212" y="31" text-anchor="middle">inner</text>
+<text class="t-xs" x="330" y="31" text-anchor="middle">inner</text>
+<text class="t-xs" x="362" y="31" text-anchor="middle">outer</text>
+<text class="t-row" x="112" y="74" text-anchor="end">1</text>
+<text class="t-row" x="112" y="112" text-anchor="end">2</text>
+<text class="t-row" x="112" y="150" text-anchor="end">3</text>
+<text class="t-row" x="112" y="188" text-anchor="end">4</text>
+<text class="t-row" x="112" y="226" text-anchor="end">5</text>
+<text class="t-row" x="112" y="264" text-anchor="end">6</text>
+<text class="t-row" x="112" y="302" text-anchor="end">7</text>
+<text class="t-row" x="112" y="340" text-anchor="end">8</text>
+<text class="t-row" x="112" y="378" text-anchor="end">9</text>
+<text class="t-row" x="112" y="416" text-anchor="end">10</text>
+<circle class="pin-on n-gnd" cx="180" cy="70" r="9"/>
+<text class="t-pin on" x="166" y="74" text-anchor="end">GND</text>
+<circle class="pin-other" cx="180" cy="108" r="7"/>
+<text class="t-pin other" x="166" y="112" text-anchor="end">IO27</text>
+<circle class="pin-other" cx="180" cy="146" r="7"/>
+<text class="t-pin other" x="166" y="150" text-anchor="end">IO25</text>
+<circle class="pin-other" cx="180" cy="184" r="7"/>
+<text class="t-pin other" x="166" y="188" text-anchor="end">IO32</text>
+<circle class="pin-off" cx="180" cy="222" r="5"/>
+<text class="t-pin off" x="166" y="226" text-anchor="end">TDI</text>
+<circle class="pin-on n-dc" cx="180" cy="260" r="9"/>
+<text class="t-pin on" x="166" y="264" text-anchor="end">IO4</text>
+<circle class="pin-off" cx="180" cy="298" r="5"/>
+<text class="t-pin off" x="166" y="302" text-anchor="end">IO0</text>
+<circle class="pin-off" cx="180" cy="336" r="5"/>
+<text class="t-pin off" x="166" y="340" text-anchor="end">IO2</text>
+<circle class="pin-off" cx="180" cy="374" r="5"/>
+<text class="t-pin off" x="166" y="378" text-anchor="end">SD1</text>
+<circle class="pin-off" cx="180" cy="412" r="5"/>
+<text class="t-pin off" x="166" y="416" text-anchor="end">CLK</text>
+<circle class="pin-off" cx="212" cy="70" r="5"/>
+<text class="t-pin off" x="226" y="74" text-anchor="start">TXD</text>
+<circle class="pin-off" cx="212" cy="108" r="5"/>
+<text class="t-pin off" x="226" y="112" text-anchor="start">RXD</text>
+<circle class="pin-off" cx="212" cy="146" r="5"/>
+<text class="t-pin off" x="226" y="150" text-anchor="start">IO22</text>
+<circle class="pin-off" cx="212" cy="184" r="5"/>
+<text class="t-pin off" x="226" y="188" text-anchor="start">IO21</text>
+<circle class="pin-on n-ocs" cx="212" cy="222" r="9"/>
+<text class="t-pin on" x="226" y="226" text-anchor="start">IO17</text>
+<circle class="pin-on n-cs" cx="212" cy="260" r="9"/>
+<text class="t-pin on" x="226" y="264" text-anchor="start">IO16</text>
+<circle class="pin-on n-gnd" cx="212" cy="298" r="9"/>
+<text class="t-pin on" x="226" y="302" text-anchor="start">GND</text>
+<circle class="pin-other" cx="212" cy="336" r="7"/>
+<text class="t-pin other" x="226" y="340" text-anchor="start">VCC</text>
+<circle class="pin-off" cx="212" cy="374" r="5"/>
+<text class="t-pin off" x="226" y="378" text-anchor="start">TDO</text>
+<circle class="pin-off" cx="212" cy="412" r="5"/>
+<text class="t-pin off" x="226" y="416" text-anchor="start">SDO</text>
+<circle class="pin-off" cx="330" cy="70" r="5"/>
+<text class="t-pin off" x="316" y="74" text-anchor="end">RST</text>
+<circle class="pin-off" cx="330" cy="108" r="5"/>
+<text class="t-pin off" x="316" y="112" text-anchor="end">SVP</text>
+<circle class="pin-other" cx="330" cy="146" r="7"/>
+<text class="t-pin other" x="316" y="150" text-anchor="end">IO26</text>
+<circle class="pin-on n-sck" cx="330" cy="184" r="9"/>
+<text class="t-pin on" x="316" y="188" text-anchor="end">IO18</text>
+<circle class="pin-on n-so" cx="330" cy="222" r="9"/>
+<text class="t-pin on" x="316" y="226" text-anchor="end">IO19</text>
+<circle class="pin-on n-mosi" cx="330" cy="260" r="9"/>
+<text class="t-pin on" x="316" y="264" text-anchor="end">IO23</text>
+<circle class="pin-off" cx="330" cy="298" r="5"/>
+<text class="t-pin off" x="316" y="302" text-anchor="end">IO5</text>
+<circle class="pin-on n-pwr" cx="330" cy="336" r="9"/>
+<text class="t-pin on" x="316" y="340" text-anchor="end">3.3V</text>
+<circle class="pin-off" cx="330" cy="374" r="5"/>
+<text class="t-pin off" x="316" y="378" text-anchor="end">TCK</text>
+<circle class="pin-off" cx="330" cy="412" r="5"/>
+<text class="t-pin off" x="316" y="416" text-anchor="end">SD3</text>
+<circle class="pin-on n-gnd" cx="362" cy="70" r="9"/>
+<text class="t-pin on" x="376" y="74" text-anchor="start">GND</text>
+<circle class="pin-off" cx="362" cy="108" r="5"/>
+<text class="t-pin off" x="376" y="112" text-anchor="start">NC</text>
+<circle class="pin-off" cx="362" cy="146" r="5"/>
+<text class="t-pin off" x="376" y="150" text-anchor="start">SVN</text>
+<circle class="pin-off" cx="362" cy="184" r="5"/>
+<text class="t-pin off" x="376" y="188" text-anchor="start">IO35</text>
+<circle class="pin-other" cx="362" cy="222" r="7"/>
+<text class="t-pin other" x="376" y="226" text-anchor="start">IO33</text>
+<circle class="pin-off" cx="362" cy="260" r="5"/>
+<text class="t-pin off" x="376" y="264" text-anchor="start">IO34</text>
+<circle class="pin-off" cx="362" cy="298" r="5"/>
+<text class="t-pin off" x="376" y="302" text-anchor="start">TMS</text>
+<circle class="pin-off" cx="362" cy="336" r="5"/>
+<text class="t-pin off" x="376" y="340" text-anchor="start">NC</text>
+<circle class="pin-off" cx="362" cy="374" r="5"/>
+<text class="t-pin off" x="376" y="378" text-anchor="start">SD2</text>
+<circle class="pin-off" cx="362" cy="412" r="5"/>
+<text class="t-pin off" x="376" y="416" text-anchor="start">CMD</text>
+</svg>

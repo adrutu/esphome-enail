@@ -1,0 +1,577 @@
+# esphome-enail v0.1.0 — e-nail controller firmware.
+# Replaces a cheap e-nail box's own controller with an ESP32 doing PID + timed sessions.
+# Copy to your ESPHome config folder as enail.yaml, add the secrets from secrets.example.yaml.
+# Wiring: docs/hardware.md. Bring-up: docs/bench-test.md. Tuning: docs/pid-tuning.md.
+#
+# Board: ESP32 Mini (classic ESP32-WROOM-32, "MINI D1 ESP32" double-row form factor).
+#   SPI bus      SCK IO18, MOSI IO23, MISO IO19 (shared by the MAX6675 and the OLED)
+#   MAX6675      CS IO16, SO → MISO, SCK → SCK, VCC 3V3            (K-type probe in the coil)
+#   OLED         Pimoroni 1.12" 128x128 mono (SH1107): CS IO17, DC IO4, MOSI, SCK, VCC 3V3, pin 6 not connected
+#   Dial         A IO32, B IO33, push IO25 (to GND, internal pull-ups)
+#   Heater       IO26 → SSR-25DA DC+, DC- → GND (SSR in series with the relay; the box's own switch is unused)
+#   Master relay IO27 → relay IN (jumper on HIGH trigger), relay VCC 5V
+#
+# Safety, all on the device (nothing depends on HA or Wi-Fi):
+#   - boots with the relay off and the PID off
+#   - probe open, unreadable or reading <= 0 °C (MAX6675 missing) → everything off ("Fault: probe")
+#   - reading above ${hard_cutoff} °C → everything off ("Fault: too hot")
+#   - heater flat out for 2 min without a 10 °C rise → off ("Fault: no heat"): probe off the coil, dead coil/SSR
+#   - every session ends by itself after its length (max 60 min)
+#   - the master relay is in series with the SSR because SSRs usually fail shorted
+
+substitutions:
+  name: enail
+  friendly_name: E-nail
+  max_target: "450"
+  hard_cutoff: "480"
+  # PID (also the start values of the live-tuning numbers). Tuned for one coil; yours will
+  # differ. See docs/pid-tuning.md before trusting these.
+  pid_kp: "0.015"
+  pid_ki: "0.0003"
+  pid_kd: "0.3"
+  pid_max_i: "0.2"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  # shows up under the device in Home Assistant
+  project:
+    name: "adrutu.esphome-enail"
+    version: "0.1.0"
+  on_boot:
+    priority: -100
+    then:
+      - script.execute:
+          id: stop_session
+          reason: "Off"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+
+api:
+  encryption:
+    key: !secret enail_api_key
+  # works without HA; a reboot would end the session anyway
+  reboot_timeout: 0s
+
+ota:
+  - platform: esphome
+    password: !secret enail_ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  reboot_timeout: 0s
+  ap:
+    ssid: "${friendly_name} Fallback"
+    password: !secret enail_ap_password
+
+captive_portal:
+
+globals:
+  - id: session_active
+    type: bool
+    initial_value: "false"
+  - id: session_start_ms
+    type: uint32_t
+    initial_value: "0"
+  - id: session_end_ms
+    type: uint32_t
+    initial_value: "0"
+  # when the coil got near the target and the soak countdown started
+  - id: soak_start_ms
+    type: uint32_t
+    initial_value: "0"
+  # 0 = the dial sets the temperature, 1 = the dial sets the session length (long press swaps)
+  - id: dial_mode
+    type: int
+    initial_value: "0"
+  # screen saver: OLEDs burn in (the prototype's panel already had a ghost of an old demo)
+  - id: last_input_ms
+    type: uint32_t
+    initial_value: "0"
+  - id: screen_on
+    type: bool
+    initial_value: "true"
+  # no-heat-rise watchdog
+  - id: rise_start_ms
+    type: uint32_t
+    initial_value: "0"
+  - id: rise_start_temp
+    type: float
+    initial_value: "0"
+
+spi:
+  clk_pin: GPIO18
+  mosi_pin: GPIO23
+  miso_pin: GPIO19
+
+output:
+  # time-proportioned SSR drive, 2 s = 100 mains half-cycles
+  - platform: slow_pwm
+    id: ssr_out
+    pin: GPIO26
+    period: 2s
+
+switch:
+  - platform: gpio
+    id: master
+    pin: GPIO27
+    restore_mode: ALWAYS_OFF
+    internal: true
+  - platform: template
+    id: session
+    name: Session
+    icon: mdi:fire
+    lambda: "return id(session_active);"
+    turn_on_action:
+      - script.execute: start_session
+    turn_off_action:
+      - script.execute:
+          id: stop_session
+          reason: "Off"
+
+climate:
+  - platform: pid
+    id: nail
+    name: None
+    sensor: nail_temp
+    default_target_temperature: 260
+    heat_output: ssr_out
+    visual:
+      min_temperature: 100
+      max_temperature: ${max_target}
+      temperature_step: 5
+    # Hand-tuned after three autotunes (full story in docs/pid-tuning.md). The autotune's
+    # "No Overshoot" set held +-6 C on a ~70 s cycle and overshot +14 C; ki /3, kd x4 and
+    # max_integral 0.2 (holding needs ~11 %) give +3.8 C peak, ~70 s from 184 C to 254 C,
+    # then +-0.8 C. max_integral stops wind-up during the heat-up.
+    control_parameters:
+      kp: ${pid_kp}
+      ki: ${pid_ki}
+      kd: ${pid_kd}
+      max_integral: ${pid_max_i}
+      output_averaging_samples: 3
+      derivative_averaging_samples: 5
+
+number:
+  - platform: template
+    id: session_minutes
+    name: Session length
+    icon: mdi:timer-outline
+    unit_of_measurement: min
+    min_value: 1
+    max_value: 60
+    step: 1
+    initial_value: 15
+    restore_value: true
+    optimistic: true
+    on_value:
+      # changing the length mid-session moves the end, counted from the start
+      - lambda: |-
+          if (id(session_active))
+            id(session_end_ms) = id(session_start_ms) + (uint32_t) x * 60000UL;
+  # after a heat-up, sit at temperature a few minutes so the heat gets from the coil into the
+  # quartz ("Soaking" with a countdown, then "Ready"). 0 = straight to Ready.
+  - platform: template
+    id: soak_minutes
+    name: Soak time
+    icon: mdi:timer-sand-complete
+    unit_of_measurement: min
+    entity_category: config
+    min_value: 0
+    max_value: 10
+    step: 0.5
+    initial_value: 3
+    restore_value: true
+    optimistic: true
+
+  # live PID tuning from HA: applies at once, NOT saved; a reboot goes back to
+  # control_parameters. Copy values that work into control_parameters and reflash.
+  - platform: template
+    id: tune_kp
+    name: PID kp
+    icon: mdi:tune-variant
+    entity_category: config
+    mode: box
+    min_value: 0
+    max_value: 0.2
+    step: 0.00001
+    initial_value: ${pid_kp}
+    restore_value: false
+    optimistic: true
+    on_value:
+      - lambda: 'id(nail).set_kp(x);'
+  - platform: template
+    id: tune_ki
+    name: PID ki
+    icon: mdi:tune-variant
+    entity_category: config
+    mode: box
+    min_value: 0
+    max_value: 0.05
+    step: 0.00001
+    initial_value: ${pid_ki}
+    restore_value: false
+    optimistic: true
+    on_value:
+      - lambda: 'id(nail).set_ki(x);'
+  - platform: template
+    id: tune_kd
+    name: PID kd
+    icon: mdi:tune-variant
+    entity_category: config
+    mode: box
+    min_value: 0
+    max_value: 1
+    step: 0.00001
+    initial_value: ${pid_kd}
+    restore_value: false
+    optimistic: true
+    on_value:
+      - lambda: 'id(nail).set_kd(x);'
+  - platform: template
+    id: tune_max_i
+    name: PID max integral
+    icon: mdi:tune-variant
+    entity_category: config
+    mode: box
+    min_value: 0
+    max_value: 1
+    step: 0.01
+    initial_value: ${pid_max_i}
+    restore_value: false
+    optimistic: true
+    on_value:
+      - lambda: 'id(nail).set_max_integral(x);'
+
+sensor:
+  - platform: max6675
+    id: nail_temp
+    name: Temperature
+    cs_pin: GPIO16
+    update_interval: 1s
+    accuracy_decimals: 0
+    on_value:
+      - if:
+          condition:
+            # a missing or unwired MAX6675 reads exactly 0 °C, not NaN
+            lambda: "return id(session_active) && (isnan(x) || x <= 0.0f || x > ${hard_cutoff});"
+          then:
+            - script.execute:
+                id: stop_session
+                reason: !lambda 'return x > ${hard_cutoff} ? std::string("Fault: too hot") : std::string("Fault: probe");'
+  - platform: pid
+    id: heat_pct
+    climate_id: nail
+    name: Heat output
+    type: HEAT
+  - platform: template
+    id: time_left
+    name: Time left
+    icon: mdi:timer-sand
+    unit_of_measurement: min
+    accuracy_decimals: 1
+    update_interval: 10s
+    lambda: |-
+      if (!id(session_active)) return 0.0f;
+      int32_t ms = (int32_t) (id(session_end_ms) - millis());
+      return ms > 0 ? ms / 60000.0f : 0.0f;
+  - platform: rotary_encoder
+    id: dial
+    name: Dial position
+    entity_category: diagnostic
+    pin_a:
+      number: GPIO32
+      mode: INPUT_PULLUP
+    pin_b:
+      number: GPIO33
+      mode: INPUT_PULLUP
+    on_clockwise:
+      - script.execute:
+          id: dial_step
+          dir: 1
+    on_anticlockwise:
+      - script.execute:
+          id: dial_step
+          dir: -1
+  - platform: wifi_signal
+    name: Wi-Fi signal
+    update_interval: 60s
+  - platform: uptime
+    name: Uptime
+    entity_category: diagnostic
+
+debug:
+  update_interval: 60s
+
+text_sensor:
+  - platform: template
+    id: status_ts
+    name: Status
+    icon: mdi:information-outline
+  # says why the board last restarted (brownout = power dip, panic/watchdog = a crash);
+  # see docs/troubleshooting.md, "The box restarts by itself"
+  - platform: debug
+    reset_reason:
+      name: Reset reason
+
+binary_sensor:
+  - platform: gpio
+    id: dial_button
+    name: Dial button
+    entity_category: diagnostic
+    pin:
+      number: GPIO25
+      mode: INPUT_PULLUP
+      inverted: true
+    on_click:
+      # short press: start / stop
+      - min_length: 30ms
+        max_length: 600ms
+        then:
+          - if:
+              condition:
+                lambda: "return !id(screen_on);"
+              then:
+                - script.execute: wake_screen
+              else:
+                - script.execute: wake_screen
+                - if:
+                    condition:
+                      lambda: "return id(session_active);"
+                    then:
+                      - script.execute:
+                          id: stop_session
+                          reason: "Stopped"
+                    else:
+                      - script.execute: start_session
+      # long press: the dial switches between temperature and session length
+      - min_length: 1s
+        max_length: 5s
+        then:
+          - script.execute: wake_screen
+          - lambda: "id(dial_mode) = 1 - id(dial_mode);"
+
+button:
+  - platform: template
+    name: PID autotune
+    icon: mdi:tune
+    entity_category: config
+    on_press:
+      - number.set:
+          id: session_minutes
+          value: 30
+      - if:
+          condition:
+            lambda: "return !id(session_active);"
+          then:
+            - script.execute: start_session
+            - script.wait: start_session
+      - if:
+          condition:
+            lambda: "return id(session_active);"
+          then:
+            # 30 % heat: at full power the coil heats ~5x faster than it cools (on 11 s, off 55 s)
+            - climate.pid.autotune:
+                id: nail
+                positive_output: 0.3
+            - lambda: 'id(status_ts).publish_state("Autotune");'
+  - platform: restart
+    name: Restart
+
+script:
+  - id: start_session
+    then:
+      - if:
+          condition:
+            lambda: "return isnan(id(nail_temp).state) || id(nail_temp).state <= 0.0f;"
+          then:
+            - lambda: 'id(status_ts).publish_state("Fault: probe");'
+          else:
+            - lambda: |-
+                uint32_t now = millis();
+                id(session_active) = true;
+                id(session_start_ms) = now;
+                id(session_end_ms) = now + (uint32_t) id(session_minutes).state * 60000UL;
+                id(rise_start_ms) = 0;
+                id(status_ts).publish_state("Heating");
+            - climate.pid.reset_integral_term: nail
+            - switch.turn_on: master
+            - climate.control:
+                id: nail
+                mode: HEAT
+
+  - id: stop_session
+    mode: restart
+    parameters:
+      reason: string
+    then:
+      - climate.control:
+          id: nail
+          mode: "OFF"
+      - switch.turn_off: master
+      - lambda: |-
+          id(session_active) = false;
+          id(last_input_ms) = millis();
+          id(status_ts).publish_state(reason);
+
+  - id: wake_screen
+    then:
+      - lambda: |-
+          id(last_input_ms) = millis();
+          if (!id(screen_on)) {
+            id(oled).turn_on();
+            id(screen_on) = true;
+          }
+
+  - id: dial_step
+    mode: queued
+    parameters:
+      dir: int
+    then:
+      - lambda: |-
+          bool was_dark = !id(screen_on);
+          id(wake_screen).execute();
+          if (was_dark) return;
+          if (id(dial_mode) == 0) {
+            // 2 °F a click; quick clicks (< 150 ms apart) step 10 °F, a fast spin (< 60 ms) 20 °F.
+            // The PID, cutoffs and HA all stay in °C.
+            static uint32_t last_click = 0;
+            uint32_t now = millis();
+            uint32_t gap = now - last_click;
+            last_click = now;
+            float step = gap < 60 ? 20.0f : (gap < 150 ? 10.0f : 2.0f);
+            float f = roundf((id(nail).target_temperature * 1.8f + 32.0f) / 2.0f) * 2.0f + dir * step;
+            float t = (f - 32.0f) / 1.8f;
+            t = std::max(100.0f, std::min(t, (float) ${max_target}));
+            auto call = id(nail).make_call();
+            call.set_target_temperature(t);
+            call.perform();
+          } else {
+            float m = std::max(1.0f, std::min(id(session_minutes).state + dir, 60.0f));
+            auto call = id(session_minutes).make_call();
+            call.set_value(m);
+            call.perform();
+          }
+
+interval:
+  # screen off after 5 min idle outside a session
+  - interval: 1s
+    then:
+      - lambda: |-
+          bool want = id(session_active) || (millis() - id(last_input_ms) < 300000UL);
+          if (want && !id(screen_on)) {
+            id(oled).turn_on();
+            id(screen_on) = true;
+          } else if (!want && id(screen_on)) {
+            id(oled).turn_off();
+            id(screen_on) = false;
+          }
+  - interval: 1s
+    then:
+      - lambda: |-
+          if (!id(session_active)) return;
+          uint32_t now = millis();
+          if ((int32_t) (now - id(session_end_ms)) >= 0) {
+            id(stop_session).execute(std::string("Done"));
+            return;
+          }
+          float t = id(nail_temp).state;
+          float h = id(heat_pct).state;
+          // heater flat out for 2 min must lift the probe by 10 °C, or something is off the coil
+          if (!isnan(t) && !isnan(h) && h >= 90.0f) {
+            if (id(rise_start_ms) == 0) {
+              id(rise_start_ms) = now;
+              id(rise_start_temp) = t;
+            } else if (now - id(rise_start_ms) > 120000UL) {
+              if (t - id(rise_start_temp) < 10.0f) {
+                id(stop_session).execute(std::string("Fault: no heat"));
+                return;
+              }
+              id(rise_start_ms) = now;
+              id(rise_start_temp) = t;
+            }
+          } else {
+            id(rise_start_ms) = 0;
+          }
+          // Heating -> Soaking once within 8 °C (~15 °F) of the target, Ready when the soak time
+          // is up; back to Heating if it drops 15 °C under (target raised a lot)
+          if (id(status_ts).state == "Autotune" || isnan(t)) return;
+          float target = id(nail).target_temperature;
+          std::string st = id(status_ts).state;
+          if (st == "Heating" && t >= target - 8.0f) {
+            id(soak_start_ms) = now;
+            id(status_ts).publish_state(id(soak_minutes).state > 0 ? "Soaking" : "Ready");
+          } else if (st == "Soaking" && now - id(soak_start_ms) >= (uint32_t) (id(soak_minutes).state * 60000.0f)) {
+            id(status_ts).publish_state("Ready");
+          } else if ((st == "Ready" || st == "Soaking") && t < target - 15.0f) {
+            id(status_ts).publish_state("Heating");
+          }
+
+font:
+  - file: "gfonts://Roboto Condensed@700"
+    id: font_big
+    size: 46
+    glyphs: "0123456789-°"
+  - file: "gfonts://Roboto Condensed"
+    id: font_small
+    size: 15
+    glyphs: " !%-.:/<>0123456789°ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+display:
+  - platform: ssd1306_spi
+    id: oled
+    model: "SH1107 128x128"
+    cs_pin: GPIO17
+    dc_pin: GPIO4
+    # 8 MHz default garbles over jumper wires; 1 MHz is plenty for this screen
+    data_rate: 1MHz
+    # Pimoroni's own driver talks mode 0; mode 3 (the default here) flashed and dropped frames
+    spi_mode: MODE0
+    # header pins at the bottom
+    rotation: 180
+    update_interval: 500ms
+    lambda: |-
+      // status line; the soak counts down to Ready
+      if (id(session_active) && id(status_ts).state == "Soaking") {
+        int32_t s = (int32_t) (id(soak_start_ms) + (uint32_t) (id(soak_minutes).state * 60000.0f) - millis()) / 1000;
+        if (s < 0) s = 0;
+        it.printf(64, 0, id(font_small), TextAlign::TOP_CENTER, "Soaking %d:%02d", s / 60, s % 60);
+      } else {
+        it.print(64, 0, id(font_small), TextAlign::TOP_CENTER, id(status_ts).state.c_str());
+      }
+      it.horizontal_line(0, 19, 128);
+      // live temperature
+      float t = id(nail_temp).state;
+      if (isnan(t))
+        it.print(64, 24, id(font_big), TextAlign::TOP_CENTER, "--");
+      else
+        it.printf(64, 24, id(font_big), TextAlign::TOP_CENTER, "%.0f°", t * 1.8f + 32.0f);  // shown in °F
+      // the row the dial is driving gets > < markers; no inverted bar, big lit areas show the burn-in
+      auto row = [&](int y, bool selected, const char *text) {
+        it.print(64, y, id(font_small), TextAlign::TOP_CENTER, text);
+        if (selected) {
+          it.print(2, y, id(font_small), ">");
+          it.print(126, y, id(font_small), TextAlign::TOP_RIGHT, "<");
+        }
+      };
+      char buf[24];
+      snprintf(buf, sizeof(buf), "Set %.0f°F", id(nail).target_temperature * 1.8f + 32.0f);
+      row(82, id(dial_mode) == 0, buf);
+      if (id(session_active)) {
+        int32_t s = (int32_t) (id(session_end_ms) - millis()) / 1000;
+        if (s < 0) s = 0;
+        snprintf(buf, sizeof(buf), "Left %d:%02d", s / 60, s % 60);
+      } else {
+        snprintf(buf, sizeof(buf), "Time %.0f min", id(session_minutes).state);
+      }
+      row(102, id(dial_mode) == 1, buf);
+      // heater power bar
+      float h = id(heat_pct).state;
+      if (id(session_active) && !isnan(h))
+        it.filled_rectangle(0, 124, (int) (128 * h / 100.0f), 4);

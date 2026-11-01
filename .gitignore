@@ -1,0 +1,10 @@
+# real secrets never go in the repo
+secrets.yaml
+firmware/secrets.yaml
+# ESPHome build output
+.esphome/
+**/.esphome/
+# local scratch
+scratch-src/
+*.bak*
+.DS_Store

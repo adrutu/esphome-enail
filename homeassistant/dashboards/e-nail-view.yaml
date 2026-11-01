@@ -1,0 +1,152 @@
+# esphome-enail v0.1.0 — one dashboard view (tab) for the e-nail.
+# Needs Mushroom cards (HACS: piitaya/lovelace-mushroom) for the two template cards.
+# Add it: open a dashboard → ⋮ → Edit → ⋮ → Raw configuration editor → paste this under `views:`
+# (indent it one level), or keep it as its own dashboard file.
+# To show it only to yourself, add `visible: [{user: <your HA user id>}]` to the view;
+# the Pulls section is personal data (see docs/home-assistant.md).
+title: E-nail
+path: e-nail
+icon: mdi:weather-windy
+type: sections
+max_columns: 2
+sections:
+- type: grid
+  cards:
+  - type: heading
+    heading: Temperature
+  - type: custom:mushroom-template-card
+    entity: switch.e_nail_session
+    primary: |-
+      {{ 'E-nail · No power' if not has_value('switch.e_nail_session') else 'E-nail · On' if is_state('switch.e_nail_session', 'on') else 'E-nail · Off' }}
+    secondary: |-
+      {%- set ok = has_value('switch.e_nail_session') -%}
+      {%- set on = is_state('switch.e_nail_session', 'on') -%}
+      {%- set st = states('sensor.e_nail_status') -%}
+      {%- set t = states('sensor.e_nail_temperature') | float(0) -%}
+      {%- set tf = (t * 1.8 + 32) | round(0) | int -%}
+      {%- set tgt = state_attr('climate.e_nail', 'temperature') | float(0) -%}
+      {%- set tgf = states('number.e_nail_target') | int(0) -%}
+      {%- set heat = states('sensor.e_nail_heat_output') | float(0) | round(0) | int -%}
+      {%- set left = states('sensor.e_nail_time_left') | float(0) | round(0) | int -%}
+      {%- set was = 'Session done' if st == 'Done' else 'Off' -%}
+      {%- if not ok -%}No power · check the box's plug
+      {%- elif st.startswith('Fault') -%}{{ st }} · {{ tf }}°F
+      {%- elif st == 'Autotune' -%}Autotuning · {{ tf }}°F · {{ left }} min left
+      {%- elif on and st == 'Soaking' -%}{%- set ls = [states('number.e_nail_soak_time') | float(0) * 60 - (now() - states.sensor.e_nail_status.last_changed).total_seconds(), 0] | max | int -%}Soaking · ready in {{ ls // 60 }}:{{ '%02d' % (ls % 60) }} · {{ tf }}°F · {{ left }} min left
+      {%- elif on and is_state('script.e_nail_ramp_session', 'on') -%}Ramping · {{ tf }}°F now, target {{ tgf }} → {{ states('input_number.e_nail_ramp_to') | int(0) }}°F · {{ left }} min left
+      {%- elif on and t < tgt - 5 -%}Heating up · {{ tf }} → {{ tgf }}°F · {{ left }} min left
+      {%- elif on and t > tgt + 5 -%}Cooling down to {{ tgf }}°F · {{ tf }}°F now · {{ left }} min left
+      {%- elif on -%}Holding {{ tgf }}°F · {{ 'heater resting' if heat < 1 else 'heater ' ~ heat ~ ' %' }} · {{ left }} min left
+      {%- elif t > 60 -%}{{ was }} · cooling off · {{ tf }}°F
+      {%- else -%}{{ was }} · cold · {{ tf }}°F
+      {%- endif -%}
+    multiline_secondary: true
+    icon: |-
+      {{ 'mdi:fire' if is_state('switch.e_nail_session', 'on') else 'mdi:power' }}
+    icon_color: |-
+      {%- set st = states('sensor.e_nail_status') -%}{%- if st.startswith('Fault') -%}red{%- elif is_state('switch.e_nail_session', 'on') -%}deep-orange{%- elif states('sensor.e_nail_temperature') | float(0) > 60 -%}blue{%- else -%}grey{%- endif -%}
+    layout: horizontal
+    tap_action:
+      action: toggle
+    hold_action:
+      action: more-info
+    grid_options:
+      columns: 12
+  - type: tile
+    entity: number.e_nail_target
+    name: Target
+    icon: mdi:fire
+    features:
+    - type: numeric-input
+      style: buttons
+    grid_options:
+      columns: 12
+- type: grid
+  cards:
+  - type: heading
+    heading: Ramp session
+  - type: tile
+    entity: input_number.e_nail_ramp_from
+    name: From
+    icon: mdi:thermometer-low
+    features:
+    - type: numeric-input
+      style: buttons
+    grid_options:
+      columns: 6
+  - type: tile
+    entity: input_number.e_nail_ramp_to
+    name: To
+    icon: mdi:thermometer-high
+    features:
+    - type: numeric-input
+      style: buttons
+    grid_options:
+      columns: 6
+  - type: tile
+    entity: number.e_nail_session_length
+    name: Over (session length)
+    features:
+    - type: numeric-input
+      style: buttons
+    grid_options:
+      columns: 12
+  - type: custom:mushroom-template-card
+    entity: script.e_nail_ramp_session
+    primary: |-
+      {{ 'Stop ramp' if is_state('script.e_nail_ramp_session', 'on') else 'Start ramp' }}
+    secondary: |-
+      {% if is_state('script.e_nail_ramp_session', 'on') %}Now {{ states('number.e_nail_target') | int(0) }} → {{ states('input_number.e_nail_ramp_to') | int(0) }}°F · {{ states('sensor.e_nail_time_left') | float(0) | round(0) | int }} min left{% else %}{{ states('input_number.e_nail_ramp_from') | int(0) }} → {{ states('input_number.e_nail_ramp_to') | int(0) }}°F over {{ states('number.e_nail_session_length') | int(0) }} min{% endif %}
+    icon: mdi:chart-line-variant
+    icon_color: |-
+      {{ 'deep-orange' if is_state('script.e_nail_ramp_session', 'on') else 'grey' }}
+    layout: horizontal
+    tap_action:
+      action: toggle
+    grid_options:
+      columns: 12
+- type: grid
+  column_span: 2
+  cards:
+  - type: heading
+    heading: Last hour
+  - type: history-graph
+    hours_to_show: 1
+    grid_options:
+      columns: full
+      rows: 5
+    entities:
+    - entity: sensor.e_nail_temperature_f
+      name: Coil
+    - entity: number.e_nail_target
+      name: Target
+- type: grid
+  cards:
+  - type: heading
+    heading: Pulls
+  - type: entity
+    entity: sensor.e_nail_pulls
+    attribute: session
+    name: This session
+    unit: pulls
+    grid_options:
+      columns: 6
+  - type: entity
+    entity: sensor.e_nail_pulls
+    attribute: today
+    name: Today
+    unit: pulls
+    grid_options:
+      columns: 6
+  - type: statistics-graph
+    title: Pulls per day
+    entities:
+    - sensor.e_nail_pulls
+    stat_types:
+    - change
+    period: day
+    chart_type: bar
+    days_to_show: 14
+    hide_legend: true
+    grid_options:
+      columns: full

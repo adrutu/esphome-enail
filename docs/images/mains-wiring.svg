@@ -1,0 +1,233 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 640" width="1000" height="640">
+<title>Box 2 with the old board removed. Inlet live (red) goes to Wago 1, which feeds one HLK-PM01 AC pin and the relay COM. Relay NO goes to SSR terminal 1, SSR terminal 2 to the heater wire that was on HL. Inlet neutral (black) goes to Wago 2, which feeds the other HLK-PM01 AC pin and the heater wire that was on HN. The white earth runs from the inlet to the coil socket and stays, with an optional extra earth to a case screw for a metal box. HLK-PM01 +Vo goes to Wago 3, which feeds the ESP32 VCC pin and the relay DC+ pin; relay NC stays empty; its -Vo goes to the breadboard minus rail. The coil socket's probe + and - go to MAX6675 T+ and T-. Relay IN, relay GND, SSR DC+ and SSR DC- stay as wired in the USB test.</title>
+<style>
+:root {
+  --bg: #f2f5f3; --panel: #ffffff; --ink: #15302a; --muted: #56706a; --faint: #9aaba5; --line: #cdd8d3;
+  --copper: #a8551f; --warn: #c0331d; --warn-wash: #fbe9e5;
+  --pcb: #dbe6f4; --pcb-edge: #2a5ca8; --bb: #f7f8f6; --bb-edge: #c3ccc8; --hole: #aab6b1; --gap: #e3e8e6;
+  --other: #9aa7a2;
+  --n-gnd: #3b4651; --n-pwr: #d1382c; --n-sck: #b97700; --n-cs: #2563c9;
+  --n-so: #1d8a50; --n-ocs: #7b45c9; --n-mosi: #0b8792; --n-dc: #c23a78;
+  --m-live: #c62828; --m-neu: #1f262b; --m-earth: #8a949b; --v5: #c97a00; --probe: #0b8792;
+  --zone-m: #fbeeea; --zone-l: #eaf1f9;
+  --font-display: "Arial Narrow", "Liberation Sans Narrow", sans-serif;
+  --font-body: system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "DejaVu Sans Mono", Menlo, monospace;
+}
+svg text { font-family: var(--font-body); fill: var(--ink); }
+svg .t-xs { font-size: 10px; fill: var(--muted); font-family: var(--font-mono); }
+svg .t-s { font-size: 11.5px; fill: var(--muted); }
+svg .t-hd { font: 600 12px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; fill: var(--copper); }
+svg .t-row { font: 500 11px var(--font-mono); fill: var(--faint); }
+svg .t-pin { font-family: var(--font-mono); font-size: 12.5px; }
+svg .t-pin.on { font-weight: 600; fill: var(--ink); }
+svg .t-pin.other { fill: var(--muted); }
+svg .t-pin.off { fill: var(--faint); }
+svg .pcb { fill: var(--pcb); stroke: var(--pcb-edge); stroke-width: 1.5; }
+svg .usb { fill: var(--panel); stroke: var(--ink); stroke-width: 1.5; }
+svg .pin-on { stroke: var(--panel); stroke-width: 2.5; }
+svg .pin-other { fill: var(--other); }
+svg .pin-off { fill: var(--pcb); stroke: var(--faint); stroke-width: 1.5; }
+svg .bb { fill: var(--bb); stroke: var(--bb-edge); stroke-width: 1.5; }
+svg .hole { fill: var(--hole); }
+svg .gap { fill: var(--gap); }
+svg .stripe { stroke-width: 2; fill: none; }
+svg .colmark { opacity: 0.2; }
+svg .mod { fill: var(--panel); stroke: var(--ink); stroke-width: 1.5; }
+svg .leg { stroke: var(--ink); stroke-width: 3; }
+svg .legtip { fill: var(--ink); }
+svg .t-modpin { font: 600 11px var(--font-mono); }
+svg .t-mod { font: 700 16px var(--font-display); }
+svg .probe { fill: none; stroke: var(--muted); stroke-width: 3; stroke-linecap: round; }
+svg .w { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+svg .hdr { fill: var(--panel); stroke: var(--ink); stroke-width: 1.5; }
+svg .hdrdiv { stroke: var(--line); stroke-width: 1; }
+svg .t-hn { font: 600 10px var(--font-mono); }
+svg .t-hl { font: 500 9px var(--font-mono); fill: var(--muted); }
+svg .t-lab { font: 700 15px var(--font-display); }
+svg .tag { fill: var(--panel); stroke-width: 2; }
+svg .t-tag { font: 600 14px var(--font-mono); }
+svg .t-where { font-size: 11px; fill: var(--muted); }
+svg .zm { fill: var(--zone-m); }
+svg .zl { fill: var(--zone-l); }
+svg .t-zone { font: 600 12px var(--font-mono); letter-spacing: 0.08em; }
+svg .zm-t { fill: var(--m-live); }
+svg .zl-t { fill: var(--n-cs); }
+svg .mw { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+svg .mw.opt { stroke-dasharray: 7 6; stroke-width: 3; }
+svg .c-live { stroke: var(--m-live); }
+svg .c-neu { stroke: var(--m-neu); }
+svg .c-earth { stroke: var(--m-earth); }
+svg .c-5v { stroke: var(--v5); }
+svg .c-gnd { stroke: var(--n-gnd); }
+svg .c-probe { stroke: var(--probe); }
+svg .d-live { fill: var(--m-live); }
+svg .d-neu { fill: var(--m-neu); }
+svg .d-earth { fill: var(--m-earth); }
+svg .d-5v { fill: var(--v5); }
+svg .d-gnd { fill: var(--n-gnd); }
+svg .d-probe { fill: var(--probe); }
+svg .wago { fill: var(--panel); stroke-width: 2.5; }
+svg .wago.live { stroke: var(--m-live); }
+svg .wago.neu { stroke: var(--m-neu); }
+svg .wago.v5 { stroke: var(--v5); }
+svg .t-ok { font: 500 11px var(--font-mono); fill: var(--muted); }
+svg .screw { fill: var(--panel); stroke: var(--m-earth); stroke-width: 2; }
+svg .w.n-gnd, svg .stripe.n-gnd, svg .tag.n-gnd { stroke: var(--n-gnd); }
+svg .w.n-pwr, svg .stripe.n-pwr, svg .tag.n-pwr { stroke: var(--n-pwr); }
+svg .w.n-sck, svg .tag.n-sck { stroke: var(--n-sck); }
+svg .w.n-cs, svg .tag.n-cs { stroke: var(--n-cs); }
+svg .w.n-so, svg .tag.n-so { stroke: var(--n-so); }
+svg .w.n-ocs, svg .tag.n-ocs { stroke: var(--n-ocs); }
+svg .w.n-mosi, svg .tag.n-mosi { stroke: var(--n-mosi); }
+svg .w.n-dc, svg .tag.n-dc { stroke: var(--n-dc); }
+svg .n-gnd:is(circle, .colmark) { fill: var(--n-gnd); }
+svg .n-pwr:is(circle, .colmark) { fill: var(--n-pwr); }
+svg .n-sck:is(circle, .colmark) { fill: var(--n-sck); }
+svg .n-cs:is(circle, .colmark) { fill: var(--n-cs); }
+svg .n-so:is(circle, .colmark) { fill: var(--n-so); }
+svg .n-ocs:is(circle) { fill: var(--n-ocs); }
+svg .n-mosi:is(circle) { fill: var(--n-mosi); }
+svg .n-dc:is(circle) { fill: var(--n-dc); }
+</style>
+<rect x="0.0" y="0.0" width="1000.0" height="640.0" fill="#ffffff"/>
+<rect class="zm" x="0" y="0" width="600" height="640"/>
+<rect class="zl" x="600" y="0" width="400" height="640"/>
+<text class="t-zone zm-t" x="16" y="24">MAINS 230 V</text>
+<text class="t-zone zl-t" x="616" y="24">LOW VOLTAGE</text>
+<text class="t-s" x="960" y="24" text-anchor="end">breadboard − rail (GND)</text>
+<rect class="bb" x="630" y="32" width="330" height="12" rx="3"/>
+<line class="stripe n-gnd" x1="636" y1="38" x2="954" y2="38"/>
+
+<path class="mw c-neu" d="M144 210 H162 V60 H220"/>
+<path class="mw c-live" d="M144 250 H220"/>
+<path class="mw c-neu" d="M220 98 H196 V242 A8 8 0 0 0 196 258 V470 H250 V490"/>
+<path class="mw c-neu" d="M310 70 H430"/>
+<path class="mw c-live" d="M310 214 H360 V118 H430"/>
+<path class="mw c-live" d="M310 262 H430"/>
+<path class="mw c-live" d="M430 300 H404 V380 H430"/>
+<path class="mw c-live" d="M430 426 H384 V490"/>
+<path class="mw c-earth" d="M144 310 H170 V606 H240 V590"/>
+<path class="mw c-earth opt" d="M280 590 V626 H56 V606"/>
+<path class="mw c-probe" d="M420 525 H700"/>
+<path class="mw c-probe" d="M420 565 H700"/>
+<path class="mw c-gnd" d="M590 70 H640 V44"/>
+<path class="mw c-5v" d="M590 118 H700"/>
+<path class="mw c-5v" d="M790 118 H850"/>
+<path class="mw c-5v" d="M590 270 H745 V154"/>
+
+<rect class="mod" x="24" y="140" width="120" height="200" rx="8"/>
+<text class="t-lab" x="36" y="166">Inlet</text>
+<text class="t-s" x="36" y="184">lead plugs in</text>
+<text class="t-pin on" x="134" y="214" text-anchor="end">N</text>
+<text class="t-pin on" x="134" y="254" text-anchor="end">L</text>
+<text class="t-pin on" x="134" y="314" text-anchor="end">E</text>
+<text class="t-s" x="166" y="52">black</text>
+<text class="t-s" x="150" y="243">red</text>
+<text class="t-s" x="162" y="420" text-anchor="end">white wire</text>
+<text class="t-s" x="162" y="436" text-anchor="end">= earth,</text>
+<text class="t-s" x="162" y="452" text-anchor="end">leave it</text>
+
+<rect class="wago neu" x="220" y="40" width="90" height="74" rx="6"/>
+<text class="t-lab" x="265" y="74" text-anchor="middle">WAGO 2</text>
+<text class="t-s" x="265" y="92" text-anchor="middle">neutral</text>
+
+<rect class="wago live" x="220" y="200" width="90" height="80" rx="6"/>
+<text class="t-lab" x="265" y="238" text-anchor="middle">WAGO 1</text>
+<text class="t-s" x="265" y="256" text-anchor="middle">live</text>
+
+<rect class="mod" x="430" y="50" width="160" height="90" rx="6"/>
+<text class="t-pin" x="438" y="74">AC</text>
+<text class="t-pin" x="438" y="122">AC</text>
+<text class="t-pin" x="582" y="74" text-anchor="end">−Vo</text>
+<text class="t-pin" x="582" y="122" text-anchor="end">+Vo</text>
+<text class="t-lab" x="510" y="92" text-anchor="middle">HLK-PM01</text>
+<text class="t-s" x="510" y="110" text-anchor="middle">solder wires on</text>
+
+<rect class="mod" x="430" y="220" width="160" height="100" rx="6"/>
+<text class="t-ok" x="438" y="240">NC empty</text>
+<text class="t-pin" x="438" y="266">COM</text>
+<text class="t-pin" x="438" y="304">NO</text>
+<text class="t-pin" x="582" y="244" text-anchor="end">IN</text>
+<text class="t-pin" x="582" y="274" text-anchor="end">DC+</text>
+<text class="t-pin" x="582" y="304" text-anchor="end">DC−</text>
+<text class="t-lab" x="510" y="256" text-anchor="middle">Relay</text>
+<text class="t-s" x="510" y="290" text-anchor="middle">jumper on H</text>
+
+<rect class="mod" x="430" y="350" width="160" height="100" rx="6"/>
+<text class="t-pin" x="440" y="384">1</text>
+<text class="t-pin" x="440" y="430">2</text>
+<text class="t-pin" x="582" y="384" text-anchor="end">DC+</text>
+<text class="t-pin" x="582" y="430" text-anchor="end">DC−</text>
+<text class="t-lab" x="510" y="410" text-anchor="middle">SSR</text>
+
+<rect class="mod" x="220" y="490" width="200" height="100" rx="6"/>
+<text class="t-s" x="250" y="510" text-anchor="middle">heater</text>
+<text class="t-s" x="384" y="510" text-anchor="middle">heater</text>
+<text class="t-lab" x="300" y="552" text-anchor="middle">Coil socket</text>
+<text class="t-s" x="412" y="529" text-anchor="end">probe +</text>
+<text class="t-s" x="412" y="569" text-anchor="end">probe −</text>
+<text class="t-pin" x="240" y="582" text-anchor="middle">⏚</text>
+<text class="t-s" x="204" y="463">was HN</text>
+<text class="t-s" x="392" y="476">was HL</text>
+
+<circle class="screw" cx="56" cy="600" r="6"/>
+<text class="t-s" x="70" y="596">case screw</text>
+<text class="t-s" x="70" y="612">metal box only</text>
+
+<rect class="wago v5" x="700" y="90" width="90" height="64" rx="6"/>
+<text class="t-lab" x="745" y="120" text-anchor="middle">WAGO 3</text>
+<text class="t-s" x="745" y="138" text-anchor="middle">5 V</text>
+
+<rect class="mod" x="850" y="90" width="124" height="120" rx="6"/>
+<text class="t-pin on" x="858" y="122">VCC</text>
+<text class="t-lab" x="862" y="156">ESP32</text>
+<text class="t-s" x="862" y="174">left inner, row 8</text>
+<text class="t-s" x="862" y="192">USB out first</text>
+
+<rect class="mod" x="700" y="495" width="150" height="100" rx="6"/>
+<text class="t-pin on" x="710" y="529">T+</text>
+<text class="t-pin on" x="710" y="569">T−</text>
+<text class="t-lab" x="785" y="545" text-anchor="middle">MAX6675</text>
+<text class="t-s" x="785" y="563" text-anchor="middle">spare probe off</text>
+
+<text class="t-ok" x="598" y="244">IO27 ✓</text>
+<text class="t-ok" x="598" y="304">− rail ✓</text>
+<text class="t-ok" x="598" y="384">IO26 ✓</text>
+<text class="t-ok" x="598" y="430">− rail ✓</text>
+<circle class="d-live" cx="144" cy="250" r="4.5"/>
+<circle class="d-live" cx="220" cy="250" r="4.5"/>
+<circle class="d-live" cx="310" cy="214" r="4.5"/>
+<circle class="d-live" cx="310" cy="262" r="4.5"/>
+<circle class="d-live" cx="430" cy="118" r="4.5"/>
+<circle class="d-live" cx="430" cy="262" r="4.5"/>
+<circle class="d-live" cx="430" cy="300" r="4.5"/>
+<circle class="d-live" cx="430" cy="380" r="4.5"/>
+<circle class="d-live" cx="430" cy="426" r="4.5"/>
+<circle class="d-live" cx="384" cy="490" r="4.5"/>
+<circle class="d-neu" cx="144" cy="210" r="4.5"/>
+<circle class="d-neu" cx="220" cy="60" r="4.5"/>
+<circle class="d-neu" cx="310" cy="70" r="4.5"/>
+<circle class="d-neu" cx="430" cy="70" r="4.5"/>
+<circle class="d-neu" cx="220" cy="98" r="4.5"/>
+<circle class="d-neu" cx="250" cy="490" r="4.5"/>
+<circle class="d-earth" cx="144" cy="310" r="4.5"/>
+<circle class="d-earth" cx="240" cy="590" r="4.5"/>
+<circle class="d-earth" cx="280" cy="590" r="4.5"/>
+<circle class="d-5v" cx="590" cy="118" r="4.5"/>
+<circle class="d-5v" cx="700" cy="118" r="4.5"/>
+<circle class="d-5v" cx="790" cy="118" r="4.5"/>
+<circle class="d-5v" cx="850" cy="118" r="4.5"/>
+<circle class="d-5v" cx="590" cy="270" r="4.5"/>
+<circle class="d-5v" cx="745" cy="154" r="4.5"/>
+<circle class="d-gnd" cx="590" cy="70" r="4.5"/>
+<circle class="d-gnd" cx="640" cy="44" r="4.5"/>
+<circle class="d-probe" cx="420" cy="525" r="4.5"/>
+<circle class="d-probe" cx="700" cy="525" r="4.5"/>
+<circle class="d-probe" cx="420" cy="565" r="4.5"/>
+<circle class="d-probe" cx="700" cy="565" r="4.5"/>
+<circle class="pin-other" cx="590" cy="240" r="4"/>
+<circle class="pin-other" cx="590" cy="300" r="4"/>
+<circle class="pin-other" cx="590" cy="380" r="4"/>
+<circle class="pin-other" cx="590" cy="426" r="4"/>
+</svg>

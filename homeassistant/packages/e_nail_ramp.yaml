@@ -1,0 +1,93 @@
+# esphome-enail v0.1.0 — ramp session. Copy to /config/packages/e_nail_ramp.yaml.
+# Start the session at one temperature and climb slowly to another by the end of it.
+# Runs in HA; the box keeps all its own cutoffs and its session timer.
+# If HA goes away mid-ramp the steps stop and the box holds the last target until the session
+# ends (the box does NOT stop on an HA disconnect). Starts a session at From (or the one on),
+# waits for the coil to get there and soak (box says Ready), then moves the target in 2 °F steps so it reaches To one
+# minute before the session ends (Session length = the ramp time). Turning the dial or the
+# target tile takes over: the ramp stops and the session carries on at that temperature.
+# Turning the session off ends it.
+input_number:
+  e_nail_ramp_from:
+    name: E-nail ramp from
+    unit_of_measurement: "°F"
+    icon: mdi:thermometer-low
+    min: 212
+    max: 842
+    step: 10
+    mode: box
+  e_nail_ramp_to:
+    name: E-nail ramp to
+    unit_of_measurement: "°F"
+    icon: mdi:thermometer-high
+    min: 212
+    max: 842
+    step: 10
+    mode: box
+
+script:
+  e_nail_ramp_session:
+    alias: E-nail ramp session
+    description: Session from the ramp From temperature to the To temperature by the end of the session.
+    icon: mdi:chart-line-variant
+    mode: single
+    max_exceeded: silent
+    sequence:
+      - variables:
+          f_from: "{{ states('input_number.e_nail_ramp_from') | float(0) }}"
+          f_to: "{{ states('input_number.e_nail_ramp_to') | float(0) }}"
+          from_c: "{{ ((f_from - 32) / 1.8) | round(2) }}"
+      - condition: template
+        value_template: "{{ has_value('climate.e_nail') and 100 <= from_c <= 450 and 212 <= f_to <= 842 }}"
+      - service: climate.set_temperature
+        target:
+          entity_id: climate.e_nail
+        data:
+          temperature: "{{ from_c }}"
+      - if:
+          - condition: state
+            entity_id: switch.e_nail_session
+            state: "off"
+        then:
+          - service: switch.turn_on
+            target:
+              entity_id: switch.e_nail_session
+          - wait_template: "{{ is_state('switch.e_nail_session', 'on') }}"
+            timeout: "00:00:10"
+            continue_on_timeout: false
+      # heat-up + soak: hold From until the box says Ready (after its soak) with the coil within
+      # 3 C of From (or the dial moves / session ends)
+      - wait_template: >-
+          {{ is_state('switch.e_nail_session', 'off')
+             or (state_attr('climate.e_nail', 'temperature') | float(0) - from_c) | abs > 1.5
+             or (is_state('sensor.e_nail_status', 'Ready')
+                 and (states('sensor.e_nail_temperature') | float(-100) - from_c) | abs <= 3) }}
+        timeout: "00:10:00"
+      - variables:
+          t0: "{{ now().timestamp() }}"
+          last_c: "{{ from_c }}"
+          manual: false
+          frac: 0
+      - repeat:
+          sequence:
+            - variables:
+                # the HA target attribute is whole C, so anything more than 1.5 C off is the dial
+                manual: "{{ (state_attr('climate.e_nail', 'temperature') | float(0) - last_c) | abs > 1.5 }}"
+                ramp_end: "{{ now().timestamp() + states('sensor.e_nail_time_left') | float(0) * 60 - 60 }}"
+            - variables:
+                # rounded: a tiny first-step value renders as '1.2e-05', which HA keeps as text
+                frac: "{{ 1 if ramp_end - t0 < 60 else ([1, (now().timestamp() - t0) / (ramp_end - t0)] | min) | round(4) }}"
+                new_c: >-
+                  {% set f = f_from + (f_to - f_from) * frac %}
+                  {{ (((f / 2) | round(0) * 2 - 32) / 1.8) | round(2) }}
+            - if: "{{ not manual and is_state('switch.e_nail_session', 'on') and new_c != last_c }}"
+              then:
+                - service: climate.set_temperature
+                  target:
+                    entity_id: climate.e_nail
+                  data:
+                    temperature: "{{ new_c }}"
+                - variables:
+                    last_c: "{{ new_c }}"
+            - delay: 10
+          until: "{{ manual or not is_state('switch.e_nail_session', 'on') or frac >= 1 }}"
