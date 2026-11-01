@@ -1,5 +1,5 @@
 # esphome-enail v0.1.0 — one dashboard view (tab) for the e-nail.
-# Needs Mushroom cards (HACS: piitaya/lovelace-mushroom) for the two template cards.
+# Needs Mushroom cards (HACS: piitaya/lovelace-mushroom) for the template and preset-chip cards.
 # Add it: open a dashboard → ⋮ → Edit → ⋮ → Raw configuration editor → paste this under `views:`
 # (indent it one level), or keep it as its own dashboard file.
 # To show it only to yourself, add `visible: [{user: <your HA user id>}]` to the view;
@@ -59,6 +59,107 @@ sections:
     features:
     - type: numeric-input
       style: buttons
+    grid_options:
+      columns: 12
+  - type: custom:mushroom-chips-card
+    chips:
+    - type: template
+      content: 470°F
+      icon: mdi:fire
+      icon_color: |-
+        {{ 'deep-orange' if states('number.e_nail_target') | float(0) == 470 else 'grey' }}
+      tap_action:
+        action: perform-action
+        perform_action: number.set_value
+        target:
+          entity_id: number.e_nail_target
+        data:
+          value: 470
+    - type: template
+      content: 480°F
+      icon: mdi:fire
+      icon_color: |-
+        {{ 'deep-orange' if states('number.e_nail_target') | float(0) == 480 else 'grey' }}
+      tap_action:
+        action: perform-action
+        perform_action: number.set_value
+        target:
+          entity_id: number.e_nail_target
+        data:
+          value: 480
+    - type: template
+      content: 485°F
+      icon: mdi:fire
+      icon_color: |-
+        {{ 'deep-orange' if states('number.e_nail_target') | float(0) == 485 else 'grey' }}
+      tap_action:
+        action: perform-action
+        perform_action: number.set_value
+        target:
+          entity_id: number.e_nail_target
+        data:
+          value: 485
+    - type: template
+      content: 490°F
+      icon: mdi:fire
+      icon_color: |-
+        {{ 'deep-orange' if states('number.e_nail_target') | float(0) == 490 else 'grey' }}
+      tap_action:
+        action: perform-action
+        perform_action: number.set_value
+        target:
+          entity_id: number.e_nail_target
+        data:
+          value: 490
+    - type: template
+      content: 495°F
+      icon: mdi:fire
+      icon_color: |-
+        {{ 'deep-orange' if states('number.e_nail_target') | float(0) == 495 else 'grey' }}
+      tap_action:
+        action: perform-action
+        perform_action: number.set_value
+        target:
+          entity_id: number.e_nail_target
+        data:
+          value: 495
+    - type: template
+      content: 500°F
+      icon: mdi:fire
+      icon_color: |-
+        {{ 'deep-orange' if states('number.e_nail_target') | float(0) == 500 else 'grey' }}
+      tap_action:
+        action: perform-action
+        perform_action: number.set_value
+        target:
+          entity_id: number.e_nail_target
+        data:
+          value: 500
+    - type: template
+      content: 505°F
+      icon: mdi:fire
+      icon_color: |-
+        {{ 'deep-orange' if states('number.e_nail_target') | float(0) == 505 else 'grey' }}
+      tap_action:
+        action: perform-action
+        perform_action: number.set_value
+        target:
+          entity_id: number.e_nail_target
+        data:
+          value: 505
+    - type: template
+      content: 510°F
+      icon: mdi:fire
+      icon_color: |-
+        {{ 'deep-orange' if states('number.e_nail_target') | float(0) == 510 else 'grey' }}
+      tap_action:
+        action: perform-action
+        perform_action: number.set_value
+        target:
+          entity_id: number.e_nail_target
+        data:
+          value: 510
+    alignment: center
     grid_options:
       columns: 12
 - type: grid

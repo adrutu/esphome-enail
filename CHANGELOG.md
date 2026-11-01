@@ -23,10 +23,12 @@ First packaged release of a working, in-use prototype.
 - °F target number (10 °F taps) and °F temperature sensor.
 - Ramp session script (From → To over the session length, dial takes over).
 - Pull counter (per session, per day, all time).
-- Dashboard view: on/off status card, target, ramp controls, last-hour graph, pull stats.
+- Dashboard view: on/off status card, target with 470–510 °F preset chips, ramp controls,
+  last-hour graph, pull stats. The °F target snaps to the 5 °F presets.
 
 ### Docs
-- Hardware, wiring diagrams, bench-test order, PID tuning log, troubleshooting, safety, prior art.
+- Hardware, wiring diagrams, bench-test order, PID tuning log, troubleshooting, safety.
+- Prior art: 15 similar open projects (e-nail, kiln, espresso, reflow, soldering) and what we share with them.
 
 ## Before 0.1.0
 

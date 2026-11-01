@@ -12,8 +12,12 @@ template:
         max: 842
         step: 10
         availability: "{{ has_value('climate.e_nail') }}"
-        # the HA climate attribute is rounded to whole °C, so snap to the dial's 2 °F grid
-        state: "{{ ((state_attr('climate.e_nail', 'temperature') | float(0) * 1.8 + 32) / 2) | round(0) * 2 }}"
+        # the HA climate attribute is rounded to whole °C, so snap to the dashboard's 5 °F presets
+        # when within 1 °F of one, else to the dial's 2 °F grid (e.g. 252 C = 485 or 486; shows 485)
+        state: >-
+          {% set f = state_attr('climate.e_nail', 'temperature') | float(0) * 1.8 + 32 %}
+          {% set p = (f / 5) | round(0) * 5 %}
+          {{ p if (f - p) | abs <= 1 else (f / 2) | round(0) * 2 }}
         set_value:
           - service: climate.set_temperature
             target:

@@ -46,7 +46,8 @@ The box runs on its own. Home Assistant adds remote control, ramps, stats and no
 
 **`e_nail_target.yaml`: °F target**
 - `number.e_nail_target`: 212–842 °F in 10 °F taps. It only changes the target and never starts
-  a session, so it's safe on a shared tablet.
+  a session, so it's safe on a shared tablet. It shows the nearest 5 °F preset when within 1 °F
+  (Home Assistant only gets the target in whole °C).
 - `sensor.e_nail_temperature_f`: the coil in °F for graphs.
 
 **`e_nail_ramp.yaml`: ramp session**

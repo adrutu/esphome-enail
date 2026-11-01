@@ -125,13 +125,29 @@ esphome-enail/
 
 ## Similar projects and credits
 
-This stands on **ESPHome** (its `pid` climate, `max6675`, `rotary_encoder`, `ssd1306_spi` and
-`debug` components) and **Home Assistant**, plus **Mushroom cards** by Paul Bottein (piitaya).
-Ideas it shares with reflow-oven controllers, espresso PID mods and other e-nail projects
-are listed with links in [docs/prior-art.md](docs/prior-art.md).
+This stands on **ESPHome** (its `pid` climate, `max6675`, `slow_pwm`, `rotary_encoder`,
+`ssd1306_spi` and `debug` components) and **Home Assistant**, plus **Mushroom cards** by
+Paul Bottein (piitaya). No code from other projects is in this repo, but plenty of people solved
+the same problems first. A nod to them (full list with links in [docs/prior-art.md](docs/prior-art.md)):
+
+- [hardboiledfrog/e-nail](https://github.com/hardboiledfrog/e-nail): the same knob + OLED + timed
+  session idea on an Arduino, with its own heat soak.
+- [J-Cat/fc-enail](https://github.com/J-Cat/fc-enail): the most complete open e-nail found;
+  its scripts "wait for the set point, then step", like our ramp.
+- [kiln-controller/esphome-kiln-api](https://github.com/kiln-controller/esphome-kiln-api): the
+  same three ESPHome blocks (`slow_pwm`, `max6675`, `pid`) running ramp/hold schedules on a kiln.
+- [Saur0o0n/PIDKiln](https://github.com/Saur0o0n/PIDKiln): a mechanical relay in series with the
+  SSR, for exactly our reason (SSRs fail closed), plus a no-heat check.
+- [rancilio-pid/clevercoffee](https://github.com/rancilio-pid/clevercoffee): its espresso "brew
+  detection" (a fast drop near the set point, then re-arm) is nearly our pull counter.
+- [rocketscream/Reflow-Oven-Controller](https://github.com/rocketscream/Reflow-Oven-Controller)
+  and [Ralim/IronOS](https://github.com/Ralim/IronOS): the reflow soak and the thermal-runaway
+  check that our Soaking state and "no heat" fault echo.
 
 Firmware, docs and tuning were worked out with [Claude Code](https://claude.com/claude-code).
 
 ## Licence
 
-[MIT](LICENSE). Build it, change it, share it. You are responsible for your own mains wiring.
+[MIT](LICENSE) for everything in this repo. Build it, change it, share it. You are responsible
+for your own mains wiring. Note that ESPHome's C++ runtime is GPLv3, so a compiled firmware
+image includes GPLv3 code ([ESPHome licence](https://github.com/esphome/esphome/blob/dev/LICENSE)).
